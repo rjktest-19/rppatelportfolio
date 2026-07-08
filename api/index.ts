@@ -3,7 +3,7 @@ import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import nodemailer from "nodemailer";
 
 // Statically import configuration files to ensure they are compiled into the Vercel Serverless Function bundle
-import firebaseAppletConfig from "../firebase-applet-config.json" with { type: "json" };
+import firebaseAppletConfig from "../firebase-applet-config.json";
 import portfolioDataFallback from "../src/lib/portfolioData.json";
 
 const app = express();
