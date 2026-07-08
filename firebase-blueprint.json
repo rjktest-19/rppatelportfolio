@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "PortfolioData": {
+      "title": "PortfolioData",
+      "description": "Entire portfolio data including projects, skills, gallery, and admin settings",
+      "type": "object",
+      "properties": {
+        "personalInfo": {
+          "type": "object",
+          "description": "Personal name, title, bio, etc"
+        },
+        "projects": {
+          "type": "array",
+          "description": "List of portfolio projects"
+        },
+        "skills": {
+          "type": "array",
+          "description": "List of skills"
+        },
+        "gallery": {
+          "type": "array",
+          "description": "List of gallery items"
+        },
+        "identityPhoto": {
+          "type": "object",
+          "description": "Avatar and action photos"
+        }
+      }
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "A contact submission message sent by a visitor",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "sentEmail": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "portfolio/{documentId}": {
+      "schema": "PortfolioData",
+      "description": "Collection storing the single data document containing all portfolio information"
+    },
+    "messages/{documentId}": {
+      "schema": "ContactMessage",
+      "description": "Collection storing individual contact messages submitted via the website form"
+    }
+  }
+}
