@@ -14,6 +14,9 @@ export default function Contact({ theme }: ContactProps) {
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [emailStatus, setEmailStatus] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const handleInputChange = (field: string, value: string) => {
     setFormState({ ...formState, [field]: value });
@@ -37,6 +40,7 @@ export default function Contact({ theme }: ContactProps) {
 
     playSynthBeep(900, 'sine', 0.1);
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       const response = await fetch('/api/contact', {
@@ -57,12 +61,14 @@ export default function Contact({ theme }: ContactProps) {
       if (response.ok && result.success) {
         setIsSubmitting(false);
         setIsSuccess(true);
+        setSubmitMessage(result.message || 'Message transmitted successfully.');
+        setEmailStatus(result.emailStatus || 'sent');
         playSynthBeep(1200, 'sine', 0.25); // Success chime
         setFormState({ name: '', email: '', message: '' });
         
         setTimeout(() => {
           setIsSuccess(false);
-        }, 5000);
+        }, 8000);
       } else {
         throw new Error(result.error || result.message || 'Submission failed.');
       }
@@ -70,7 +76,12 @@ export default function Contact({ theme }: ContactProps) {
       console.error('Mail submit error:', err);
       setIsSubmitting(false);
       playSynthBeep(350, 'sawtooth', 0.2);
-      alert(`Gateway Submission Error: ${err?.message || 'Check network connection.'}`);
+      
+      let msg = err?.message || 'Check network connection.';
+      if (msg.includes('Application-specific password required') || msg.includes('534') || msg.includes('Invalid login')) {
+        msg = "Gmail Authentication Failure: An App Password is required. Since you have 2-Factor Authentication (2FA) enabled on your Google account, you cannot use your regular Gmail password. Please go to your Google Account Settings (myaccount.google.com), navigate to Security, search for 'App passwords', generate a 16-character App Password, and set it as SMTP_PASS in your AI Studio Settings.";
+      }
+      setSubmitError(msg);
     }
   };
 
@@ -269,6 +280,18 @@ export default function Contact({ theme }: ContactProps) {
                   />
                 </div>
 
+                {/* Submit error message if present */}
+                {submitError && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[11px] leading-relaxed"
+                  >
+                    <span className="font-bold uppercase tracking-wider block mb-1">⚠️ GATEWAY DISPATCH EXCEPTION</span>
+                    {submitError}
+                  </motion.div>
+                )}
+
                 {/* Submit button */}
                 <div className="flex items-center justify-between gap-4">
                   
@@ -315,9 +338,27 @@ export default function Contact({ theme }: ContactProps) {
                       <CheckCircle2 className="w-10 h-10 animate-bounce" />
                     </div>
                     <h3 className="font-display text-lg font-black uppercase tracking-wider text-white mb-2">Packet Transmitted Successfully</h3>
-                    <p className="font-mono text-xs text-white/60 max-w-sm mb-4 leading-relaxed">
-                      Your diagnostic communication has bypassed main gateways and synced securely to my private queue. I will reply within 24 hours.
+                    <p className="font-mono text-xs text-white/80 max-w-sm mb-2 leading-relaxed">
+                      {submitMessage}
                     </p>
+                    {emailStatus === 'stored_only' ? (
+                      <p className="font-mono text-[10px] text-yellow-500 max-w-xs mb-4 leading-relaxed">
+                        ⚠️ Note: SMTP_USER and SMTP_PASS are not configured in your hosting environment. The message was stored safely in your Firestore database instead of being emailed.
+                      </p>
+                    ) : emailStatus === 'failed' ? (
+                      <div className="text-center max-w-sm mb-4">
+                        <p className="font-mono text-[10px] text-yellow-500 leading-relaxed">
+                          ⚠️ Email dispatch skipped: Invalid login/App Password required.
+                        </p>
+                        <p className="font-mono text-[9px] text-white/50 mt-1 leading-normal">
+                          But don't worry! Your message is safely stored in the Firestore database, and the admin will see it in the Admin Panel.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="font-mono text-[10px] text-green-400 max-w-xs mb-4 leading-relaxed">
+                        ✓ Bypassed main gateways and successfully dispatched to your email.
+                      </p>
+                    )}
                     <span className="font-mono text-[9px] text-brand-orange tracking-widest uppercase animate-pulse">GATEWAY READY FOR NEW INPUTS</span>
                   </motion.div>
                 )}

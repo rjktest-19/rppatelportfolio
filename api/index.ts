@@ -1,4 +1,5 @@
-import express from "expres
+import express from "express";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import nodemailer from "nodemailer";
 
@@ -9,58 +10,75 @@ import portfolioDataFallback from "../src/lib/portfolioData.json";
 const app = express();
 
 // Use JSON parsing middleware with a generous size limit
-app.use(express.json({ li
+app.use(express.json({ limit: "10mb" }));
 
 // Initialize Firebase JS client SDK dynamically
-let db: any 
+let db: any = null;
+try {
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseAppletConfig) : getApp();
   
   if (firebaseAppletConfig.firestoreDatabaseId) {
-    db = getFirestore(firebaseApp, firetConfig.firestoreDatabaseId);
+    db = getFirestore(firebaseApp, firebaseAppletConfig.firestoreDatabaseId);
   } else {
-    db = getFirestore(firebaseAp
+    db = getFirestore(firebaseApp);
+  }
   console.log("Firebase Backend Client SDK initialized successfully with database:", firebaseAppletConfig.firestoreDatabaseId || "(default)");
 } catch (error) {
-  console.error("Failed to initialize Firebase Client SDK on backend:", error)
+  console.error("Failed to initialize Firebase Client SDK on backend:", error);
+}
 
 // API Route: Get portfolio data
 app.get("/api/portfolio", async (req, res) => {
-  
+  try {
     if (db) {
       try {
-        const docRef = doc(ta");
+        const docRef = doc(db, "portfolio", "data");
         const docSnap = await getDoc(docRef);
-        if 
+        if (docSnap.exists()) {
+          return res.json(docSnap.data());
         } else if (portfolioDataFallback) {
           // Seed firestore with initial local data
           await setDoc(docRef, portfolioDataFallback);
           console.log("Seeded Firestore with local portfolioData.json");
-          return res.json(pok);
+          return res.json(portfolioDataFallback);
         }
       } catch (dbErr) {
-        console.error("Error reading from Firestore, using local file backup:", d
+        console.error("Error reading from Firestore, using local file backup:", dbErr);
+      }
     }
 
     if (portfolioDataFallback) {
-      return res.json(portfolioDa
+      return res.json(portfolioDataFallback);
     }
     return res.status(404).json({ error: "Portfolio data not found." });
-  } catch (err
+  } catch (err: any) {
     console.error("Error reading portfolio data:", err);
-    return res.status(500).json({ error: err.messag
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // API Route: Save/Update portfolio data
-app.post("/api/portfolio", async (re {
+app.post("/api/portfolio", async (req, res) => {
   try {
     const newData = req.body;
-    if (!newData || typeof newData !== "obj) {
-      return res.status(400).json({ error: "In
+    if (!newData || typeof newData !== "object") {
+      return res.status(400).json({ error: "Invalid body payload" });
+    }
+
     // 1. Save to local disk fallback if environment allows writable filesystem
     try {
       const fs = await import("fs");
-      const 
-      const jsonPath = path.join(process
+      const path = await import("path");
+      const jsonPath = path.join(process.cwd(), "src", "lib", "portfolioData.json");
+      fs.writeFileSync(jsonPath, JSON.stringify(newData, null, 2), "utf-8");
+      console.log("Successfully saved portfolio data to disk fallback");
+    } catch (fsErr) {
+      console.warn("Could not write local backup file (expected on read-only environments like Vercel):", fsErr);
+    }
+
+    // 2. Save to Firestore
+    if (db) {
+      try {
         const docRef = doc(db, "portfolio", "data");
         await setDoc(docRef, newData);
         console.log("Successfully saved portfolio data to Firestore");
@@ -88,8 +106,8 @@ app.post("/api/contact", async (req, res) => {
     let emailError = "";
 
     // 1. Send Email via Nodemailer if SMTP is configured
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    const smtpUser = process.env.SMTP_USER || "rjk628765@gmail.com";
+    const smtpPass = process.env.SMTP_PASS || "quxw hqqe fyvz xnwu";
     const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
     const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || "rjk62876565@gmail.com";
@@ -144,6 +162,7 @@ app.post("/api/contact", async (req, res) => {
       emailError = "SMTP credentials not configured. Message stored in database fallback.";
     }
 
+    let savedToDb = false;
     // 2. Save to Firestore messages collection so it's never lost
     if (db) {
       try {
@@ -157,9 +176,28 @@ app.post("/api/contact", async (req, res) => {
           sentEmail,
           emailError: emailError || null
         });
+        savedToDb = true;
         console.log(`Stored contact message in Firestore with ID: ${docId}`);
       } catch (dbErr) {
         console.error("Failed to write contact message to Firestore:", dbErr);
+      }
+    }
+
+    if (smtpUser && smtpPass && !sentEmail) {
+      if (savedToDb) {
+        return res.json({
+          success: true,
+          message: "Your message was saved securely to the database. However, we could not forward it to the email gateway due to an SMTP authentication issue (please ensure an App Password is used if 2FA is enabled).",
+          emailStatus: "failed",
+          emailError
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: `SMTP Dispatch Error: ${emailError}. Additionally, saving to the database backup failed.`,
+          emailStatus: "failed",
+          emailError
+        });
       }
     }
 
