@@ -1,84 +1,66 @@
-import express from "express";
-import { initializeApp, getApps, getApp } from "firebase/app";
+import express from "expres
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import nodemailer from "nodemailer";
 
 // Statically import configuration files to ensure they are compiled into the Vercel Serverless Function bundle
-import firebaseAppletConfig from "../firebase-applet-config.json";
+import firebaseAppletConfig from "../firebase-applet-config.json" with { type: "json" };
 import portfolioDataFallback from "../src/lib/portfolioData.json";
 
 const app = express();
 
 // Use JSON parsing middleware with a generous size limit
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ li
 
 // Initialize Firebase JS client SDK dynamically
-let db: any = null;
-try {
+let db: any 
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseAppletConfig) : getApp();
   
   if (firebaseAppletConfig.firestoreDatabaseId) {
-    db = getFirestore(firebaseApp, firebaseAppletConfig.firestoreDatabaseId);
+    db = getFirestore(firebaseApp, firetConfig.firestoreDatabaseId);
   } else {
-    db = getFirestore(firebaseApp);
-  }
+    db = getFirestore(firebaseAp
   console.log("Firebase Backend Client SDK initialized successfully with database:", firebaseAppletConfig.firestoreDatabaseId || "(default)");
 } catch (error) {
-  console.error("Failed to initialize Firebase Client SDK on backend:", error);
-}
+  console.error("Failed to initialize Firebase Client SDK on backend:", error)
 
 // API Route: Get portfolio data
 app.get("/api/portfolio", async (req, res) => {
-  try {
+  
     if (db) {
       try {
-        const docRef = doc(db, "portfolio", "data");
+        const docRef = doc(ta");
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          return res.json(docSnap.data());
+        if 
         } else if (portfolioDataFallback) {
           // Seed firestore with initial local data
           await setDoc(docRef, portfolioDataFallback);
           console.log("Seeded Firestore with local portfolioData.json");
-          return res.json(portfolioDataFallback);
+          return res.json(pok);
         }
       } catch (dbErr) {
-        console.error("Error reading from Firestore, using local file backup:", dbErr);
-      }
+        console.error("Error reading from Firestore, using local file backup:", d
     }
 
     if (portfolioDataFallback) {
-      return res.json(portfolioDataFallback);
+      return res.json(portfolioDa
     }
     return res.status(404).json({ error: "Portfolio data not found." });
-  } catch (err: any) {
+  } catch (err
     console.error("Error reading portfolio data:", err);
-    return res.status(500).json({ error: err.message });
-  }
+    return res.status(500).json({ error: err.messag
 });
 
 // API Route: Save/Update portfolio data
-app.post("/api/portfolio", async (req, res) => {
+app.post("/api/portfolio", async (re {
   try {
     const newData = req.body;
-    if (!newData || typeof newData !== "object") {
-      return res.status(400).json({ error: "Invalid body payload" });
-    }
-
+    if (!newData || typeof newData !== "obj) {
+      return res.status(400).json({ error: "In
     // 1. Save to local disk fallback if environment allows writable filesystem
     try {
       const fs = await import("fs");
-      const path = await import("path");
-      const jsonPath = path.join(process.cwd(), "src", "lib", "portfolioData.json");
-      fs.writeFileSync(jsonPath, JSON.stringify(newData, null, 2), "utf-8");
-      console.log("Successfully saved portfolio data to disk fallback");
-    } catch (fsErr) {
-      console.warn("Could not write local backup file (expected on read-only environments like Vercel):", fsErr);
-    }
-
-    // 2. Save to Firestore
-    if (db) {
-      try {
+      const 
+      const jsonPath = path.join(process
         const docRef = doc(db, "portfolio", "data");
         await setDoc(docRef, newData);
         console.log("Successfully saved portfolio data to Firestore");
