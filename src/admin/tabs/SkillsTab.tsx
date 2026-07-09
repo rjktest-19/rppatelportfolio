@@ -66,16 +66,18 @@ export default function SkillsTab({
               <Trash2
                 onClick={(e) => {
                   e.stopPropagation();
-                  setEditedData(prev => ({
-                    ...prev,
-                    skills: prev.skills.filter((_, sIdx) => sIdx !== index)
-                  }));
-                  if (selectedSkillIndex === index) {
-                    setSelectedSkillIndex(-1);
+                  if (confirm(`Are you sure you want to delete "${s.name}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      skills: prev.skills.filter((_, sIdx) => sIdx !== index)
+                    }));
+                    if (selectedSkillIndex === index) {
+                      setSelectedSkillIndex(-1);
+                    }
+                    playSynthBeep(400, 'triangle', 0.1);
                   }
-                  playSynthBeep(400, 'triangle', 0.1);
                 }}
-                className="w-3.5 h-3.5 text-neutral-600 hover:text-brand-red opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ml-2"
+                className="w-3.5 h-3.5 text-neutral-400/80 hover:text-brand-red opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer ml-2 shrink-0"
               />
             </button>
           ))}
@@ -151,7 +153,7 @@ export default function SkillsTab({
                   />
                 </div>
               </div>
-              <div>
+               <div>
                 <label className="block text-[9px] font-mono uppercase text-neutral-400 mb-1">Icon Representation Name</label>
                 <select
                   value={selectedSkill.iconName}
@@ -169,6 +171,25 @@ export default function SkillsTab({
                   <option value="sparkles">Sparkles (Aesthetics)</option>
                 </select>
               </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete "${selectedSkill.name}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      skills: prev.skills.filter((_, idx) => idx !== selectedSkillIndex)
+                    }));
+                    setSelectedSkillIndex(-1);
+                    playSynthBeep(400, 'triangle', 0.1);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-red-950/20 border border-brand-red/30 hover:bg-brand-red/30 hover:border-brand-red/60 text-brand-red hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Skill
+              </button>
             </div>
           </div>
         ) : (
