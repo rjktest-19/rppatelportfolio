@@ -3,9 +3,12 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import nodemailer from "nodemailer";
 
-// Statically import configuration files to ensure they are compiled into the Vercel Serverless Function bundle
-import firebaseAppletConfig from "../firebase-applet-config.json";
-import portfolioDataFallback from "../src/lib/portfolioData.json";
+import { createRequire } from "module";
+
+// Use createRequire to safely load JSON files in ES Modules without requiring import attributes
+const require = createRequire(import.meta.url);
+const firebaseAppletConfig = require("../firebase-applet-config.json");
+const portfolioDataFallback = require("../src/lib/portfolioData.json");
 
 const app = express();
 
