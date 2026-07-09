@@ -63,13 +63,18 @@ export default function GalleryTab({
               <Trash2
                 onClick={(e) => {
                   e.stopPropagation();
-                  setEditedData(prev => ({
-                    ...prev,
-                    gallery: prev.gallery.filter(item => item.id !== g.id)
-                  }));
-                  playSynthBeep(400, 'triangle', 0.1);
+                  if (confirm(`Are you sure you want to delete "${g.title}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      gallery: prev.gallery.filter(item => item.id !== g.id)
+                    }));
+                    if (selectedGalleryId === g.id) {
+                      setSelectedGalleryId('');
+                    }
+                    playSynthBeep(400, 'triangle', 0.1);
+                  }
                 }}
-                className="w-3.5 h-3.5 text-neutral-600 hover:text-brand-red opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ml-2"
+                className="w-3.5 h-3.5 text-neutral-400/80 hover:text-brand-red opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer ml-2 shrink-0"
               />
             </button>
           ))}
@@ -186,6 +191,25 @@ export default function GalleryTab({
                 className="w-full px-3.5 py-2 rounded-xl bg-neutral-900 border border-white/5 text-xs text-white focus:outline-none font-sans leading-relaxed"
               />
             </div>
+
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete "${selectedGallery.title}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      gallery: prev.gallery.filter(item => item.id !== selectedGallery.id)
+                    }));
+                    setSelectedGalleryId('');
+                    playSynthBeep(400, 'triangle', 0.1);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-red-950/20 border border-brand-red/30 hover:bg-brand-red/30 hover:border-brand-red/60 text-brand-red hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Artwork
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center border border-white/5 bg-neutral-900/40 rounded-2xl h-[50vh] text-neutral-500 text-xs">
@@ -195,4 +219,4 @@ export default function GalleryTab({
       </div>
     </div>
   );
-}
+                }
