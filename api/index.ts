@@ -113,7 +113,7 @@ app.post("/api/contact", async (req, res) => {
     const smtpPass = process.env.SMTP_PASS || "quxw hqqe fyvz xnwu";
     const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
-    const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || "rjk62876565@gmail.com";
+    const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || "rjk628765@gmail.com";
 
     if (smtpUser && smtpPass) {
       try {
