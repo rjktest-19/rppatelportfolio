@@ -69,13 +69,18 @@ export default function ProjectsTab({
               <Trash2
                 onClick={(e) => {
                   e.stopPropagation();
-                  setEditedData(prev => ({
-                    ...prev,
-                    projects: prev.projects.filter(proj => proj.id !== p.id)
-                  }));
-                  playSynthBeep(400, 'triangle', 0.1);
+                  if (confirm(`Are you sure you want to delete "${p.title}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      projects: prev.projects.filter(proj => proj.id !== p.id)
+                    }));
+                    if (selectedProjectId === p.id) {
+                      setSelectedProjectId('');
+                    }
+                    playSynthBeep(400, 'triangle', 0.1);
+                  }
                 }}
-                className="w-3.5 h-3.5 text-neutral-600 hover:text-brand-red opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ml-2"
+                className="w-3.5 h-3.5 text-neutral-400/80 hover:text-brand-red opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer ml-2 shrink-0"
               />
             </button>
           ))}
@@ -258,6 +263,25 @@ export default function ProjectsTab({
                 rows={3}
                 className="w-full px-3.5 py-2 rounded-xl bg-neutral-900 border border-white/5 text-xs text-white focus:outline-none font-sans"
               />
+            </div>
+
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete "${selectedProject.title}"?`)) {
+                    setEditedData(prev => ({
+                      ...prev,
+                      projects: prev.projects.filter(proj => proj.id !== selectedProject.id)
+                    }));
+                    setSelectedProjectId('');
+                    playSynthBeep(400, 'triangle', 0.1);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-red-950/20 border border-brand-red/30 hover:bg-brand-red/30 hover:border-brand-red/60 text-brand-red hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Project
+              </button>
             </div>
           </div>
         ) : (
